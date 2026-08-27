@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin - Pisang Coklat</title>
+
+    <link rel="stylesheet" href="admin.css">
+</head>
+
+<body>
+
+    <header>
+        <h1>Admin Pisang Coklat</h1>
+        <p>Daftar pesanan pelanggan</p>
+        <button
+    class="logout"
+    onclick="logoutAdmin()"
+>
+    Logout
+</button>
+    </header>
+
+    <main>
+
+        <section class="produk-admin">
+
+    <h2>Tambah Produk</h2>
+
+    <form id="form-produk">
+
+        <label for="nama-produk">
+            Nama Produk
+        </label>
+
+        <input
+            type="text"
+            id="nama-produk"
+            required
+        >
+
+        <label for="deskripsi-produk">
+            Deskripsi
+        </label>
+
+        <textarea
+            id="deskripsi-produk"
+        ></textarea>
+
+        <label for="harga-produk">
+            Harga
+        </label>
+
+        <input
+            type="number"
+            id="harga-produk"
+            required
+        >
+
+        <label for="gambar-produk">
+    Foto Produk
+</label>
+
+<input
+    type="file"
+    id="gambar-produk"
+    accept="image/jpeg, image/png, image/webp"
+    required
+>
+
+        <button type="submit">
+            Tambah Produk
+        </button>
+
+    </form>
+
+</section>
+
+<section class="edit-produk" id="edit-produk">
+
+    <h2>Edit Produk</h2>
+
+    <form id="form-edit-produk">
+
+        <input
+            type="hidden"
+            id="edit-id"
+        >
+
+        <label for="edit-nama">
+            Nama Produk
+        </label>
+
+        <input
+            type="text"
+            id="edit-nama"
+            required
+        >
+
+        <label for="edit-deskripsi">
+            Deskripsi
+        </label>
+
+        <textarea
+            id="edit-deskripsi"
+        ></textarea>
+
+        <label for="edit-harga">
+            Harga
+        </label>
+
+        <input
+            type="number"
+            id="edit-harga"
+            min="1"
+            required
+        >
+
+        <div class="tombol-form-edit">
+
+            <button type="submit">
+                Simpan Perubahan
+            </button>
+
+            <button
+                type="button"
+                class="tombol-batal"
+                onclick="batalEdit()"
+            >
+                Batal
+            </button>
+
+        </div>
+
+    </form>
+
+</section>
+
+<section class="daftar-produk-admin">
+
+    <h2>Daftar Produk</h2>
+
+    <div id="daftar-produk-admin">
+        <p>Memuat produk...</p>
+    </div>
+
+</section>
+
+        <section class="container">
+
+            <h2>Pesanan Masuk</h2>
+
+            <div id="daftar-pesanan">
+                <p>Memuat data...</p>
+            </div>
+
+        </section>
+
+    </main>
+
+    <script src="admin.js"></script>
+
+</body>
+
+</html>

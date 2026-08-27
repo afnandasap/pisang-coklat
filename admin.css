@@ -1,0 +1,253 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+header {
+    background-color: #5c3213;
+    color: white;
+
+    padding: 25px;
+
+    text-align: center;
+}
+
+.container {
+    max-width: 1000px;
+
+    margin: 40px auto;
+
+    padding: 20px;
+}
+
+.container h2 {
+    margin-bottom: 25px;
+}
+
+.card-pesanan {
+    background-color: white;
+
+    padding: 25px;
+
+    margin-bottom: 20px;
+
+    border-radius: 12px;
+
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.card-pesanan h3 {
+    color: #5c3213;
+
+    margin-bottom: 15px;
+}
+
+.card-pesanan p {
+    margin-bottom: 8px;
+}
+
+.total {
+    margin-top: 15px;
+
+    font-size: 18px;
+
+    font-weight: bold;
+
+    color: #804919;
+}
+
+.daftar-produk {
+    margin-top: 20px;
+
+    padding-top: 15px;
+
+    border-top: 1px solid #ddd;
+}
+
+.daftar-produk h4 {
+    margin-bottom: 12px;
+}
+
+.produk-pesanan {
+    display: flex;
+
+    justify-content: space-between;
+
+    padding: 8px 0;
+
+    border-bottom: 1px dashed #ddd;
+}
+
+.status-container {
+    margin-top: 20px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 15px;
+}
+
+.status-container select {
+    padding: 10px 15px;
+
+    border: 1px solid #ccc;
+
+    border-radius: 8px;
+
+    font-size: 15px;
+
+    background-color: white;
+
+    cursor: pointer;
+}
+
+.produk-admin {
+    max-width: 1000px;
+
+    margin: 40px auto;
+
+    padding: 25px;
+
+    background-color: white;
+
+    border-radius: 12px;
+
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.produk-admin h2 {
+    margin-bottom: 20px;
+}
+
+.produk-admin form {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 15px;
+}
+
+.produk-admin input,
+.produk-admin textarea {
+    padding: 12px;
+
+    border: 1px solid #ccc;
+
+    border-radius: 8px;
+
+    font-size: 16px;
+}
+
+.daftar-produk-admin {
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 25px;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.produk-admin-card {
+    padding: 20px 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.produk-admin-card h3 {
+    margin-bottom: 8px;
+}
+
+.produk-admin-card p {
+    margin-bottom: 8px;
+}
+
+.aksi-produk {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+}
+
+.tombol-edit {
+    background-color: #d88a00;
+}
+
+.tombol-hapus {
+    background-color: #b3261e;
+}
+
+.edit-produk {
+    display: none;
+
+    max-width: 1000px;
+
+    margin: 40px auto;
+
+    padding: 25px;
+
+    background-color: white;
+
+    border-radius: 12px;
+
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.edit-produk h2 {
+    margin-bottom: 20px;
+}
+
+.edit-produk form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.edit-produk input,
+.edit-produk textarea {
+    padding: 12px;
+
+    border: 1px solid #ccc;
+
+    border-radius: 8px;
+
+    font-size: 16px;
+}
+
+.edit-produk textarea {
+    min-height: 100px;
+
+    resize: vertical;
+}
+
+.tombol-form-edit {
+    display: flex;
+
+    gap: 10px;
+}
+
+.tombol-batal {
+    background-color: #777;
+}
+
+.gambar-produk-admin {
+    width: 150px;
+    height: 150px;
+
+    object-fit: cover;
+
+    border-radius: 10px;
+
+    margin-bottom: 15px;
+}
+
+.logout {
+    margin-top: 15px;
+
+    background-color: #b3261e;
+}

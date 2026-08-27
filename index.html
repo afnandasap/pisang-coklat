@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Pisang Coklat</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <nav class="navbar">
+
+    <div class="logo">
+        PisangCoklat
+    </div>
+
+    <div class="menu">
+        <a href="#">Beranda</a>
+        <a href="#produk">Menu</a>
+        <a href="#">Tentang</a>
+        <a href="#keranjang">Keranjang (<span id="jumlah-keranjang">0</span>)
+</a>
+    </div>
+
+</nav>
+
+    <header>
+        <h1>Pisang Coklat</h1>
+        <p>Manis, crispy, dan coklatnya lumer.</p>
+    </header>
+
+    <main>
+
+        <section class="hero">
+            <h2>Pisang Coklat Favoritmu</h2>
+            <p>Dibuat fresh setiap hari.</p>
+
+            <button>Pesan Sekarang</button>
+        </section>
+
+<section class="produk" id="produk">
+
+    <h2>Menu Kami</h2>
+
+    <div
+        class="produk-container"
+        id="produk-container"
+    >
+        <p>Memuat produk...</p>
+    </div>
+
+</section>
+
+<section class="keranjang" id="keranjang">
+
+    <h2>Keranjang Belanja</h2>
+
+    <div id="daftar-keranjang">
+        <p>Keranjang masih kosong.</p>
+    </div>
+
+    <h3>
+        Total: Rp<span id="total-harga">0</span>
+    </h3>
+
+    <button class="checkout" onclick="checkout()">
+    Checkout
+</button>
+
+</section>
+
+<section class="checkout-form" id="checkout-form">
+
+    <h2>Data Pemesanan</h2>
+
+    <form id="form-pesanan">
+
+        <label for="nama">Nama</label>
+        <input
+            type="text"
+            id="nama"
+            placeholder="Masukkan nama"
+            required
+        >
+
+        <label for="whatsapp">Nomor WhatsApp</label>
+        <input
+            type="text"
+            id="whatsapp"
+            placeholder="Contoh: 081234567890"
+            required
+        >
+
+        <label for="alamat">Alamat</label>
+        <textarea
+            id="alamat"
+            placeholder="Masukkan alamat lengkap"
+            required
+        ></textarea>
+
+        <label for="catatan">Catatan</label>
+        <textarea
+            id="catatan"
+            placeholder="Contoh: coklat lebih banyak"
+        ></textarea>
+
+        <button type="submit">
+            Pesan Sekarang
+        </button>
+
+    </form>
+
+</section>
+
+    </main>
+
+<script src="script.js"></script>
+
+</body>
+</html>
+
