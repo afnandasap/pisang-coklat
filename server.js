@@ -3,15 +3,15 @@ const bcrypt = require("bcrypt");
 const session = require("express-session");
 const express = require("express");
 const cors = require("cors");
-const mysql = require("mysql2");
+//const mysql = require("mysql2");
 const app = express();
 const pool = require("./db-postgres");
-const db = mysql.createConnection({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME
-});
+// const db = mysql.createConnection({
+//     host: process.env.DB_HOST,
+//     user: process.env.DB_USER,
+//     password: process.env.DB_PASSWORD,
+//     database: process.env.DB_NAME
+// });
 const multer = require("multer");
 const path = require("path");
 
@@ -66,230 +66,314 @@ app.use(
     })
 );
 
-app.post("/pesanan", function(req, res) {
+app.post("/pesanan", async function(req, res) {
 
-    const {
-        nama,
-        whatsapp,
-        alamat,
-        catatan,
-        keranjang
-    } = req.body;
+    console.log("===== PESANAN BARU MASUK =====");
+    console.log(req.body);
 
-    let total = 0;
+    const client = await pool.connect();
 
-    keranjang.forEach(function(produk) {
+    try {
 
-        total += produk.harga * produk.jumlah;
-
-    });
-
-    const sqlPesanan = `
-        INSERT INTO pesanan
-        (nama, whatsapp, alamat, catatan, total)
-        VALUES (?, ?, ?, ?, ?)
-    `;
-
-    db.query(
-        sqlPesanan,
-        [
+        const {
             nama,
             whatsapp,
             alamat,
             catatan,
-            total
-        ],
-        function(error, result) {
+            keranjang
+        } = req.body;
 
-            if (error) {
+        if (
+            !nama ||
+            !whatsapp ||
+            !alamat ||
+            !Array.isArray(keranjang) ||
+            keranjang.length === 0
+        ) {
 
-                console.error(error);
+            console.log("Data pesanan tidak lengkap");
 
-                return res.status(500).json({
-                    pesan: "Gagal menyimpan pesanan"
-                });
-            }
-
-            const pesananId = result.insertId;
-
-            let detail = [];
-
-            keranjang.forEach(function(produk) {
-
-                let subtotal =
-                    produk.harga * produk.jumlah;
-
-                detail.push([
-                    pesananId,
-                    produk.nama,
-                    produk.harga,
-                    produk.jumlah,
-                    subtotal
-                ]);
-
+            return res.status(400).json({
+                pesan: "Data pesanan tidak lengkap"
             });
+        }
 
-            const sqlDetail = `
-                INSERT INTO detail_pesanan
+        await client.query("BEGIN");
+
+        let total = 0;
+
+        keranjang.forEach(function(produk) {
+
+            total +=
+                Number(produk.harga) *
+                Number(produk.jumlah);
+
+        });
+
+        console.log("Total:", total);
+
+
+        const hasilPesanan =
+            await client.query(
+                `
+                INSERT INTO pesanan
                 (
-                    pesanan_id,
-                    nama_produk,
-                    harga,
-                    jumlah,
-                    subtotal
+                    nama,
+                    whatsapp,
+                    alamat,
+                    catatan,
+                    total
                 )
-                VALUES ?
-            `;
+                VALUES
+                ($1, $2, $3, $4, $5)
 
-            db.query(
-                sqlDetail,
-                [detail],
-                function(error) {
-
-                    if (error) {
-
-                        console.error(error);
-
-                        return res.status(500).json({
-                            pesan:
-                            "Pesanan tersimpan tetapi detail gagal"
-                        });
-                    }
-
-                    res.json({
-                        pesan:
-                        "Pesanan berhasil disimpan",
-                        pesananId:
-                        pesananId
-                    });
-
-                }
+                RETURNING *
+                `,
+                [
+                    nama,
+                    whatsapp,
+                    alamat,
+                    catatan || null,
+                    total
+                ]
             );
 
+
+        const pesananBaru =
+            hasilPesanan.rows[0];
+
+        console.log(
+            "Pesanan berhasil dibuat:",
+            pesananBaru
+        );
+
+
+        for (const produk of keranjang) {
+
+            const harga =
+                Number(produk.harga);
+
+            const jumlah =
+                Number(produk.jumlah);
+
+            const subtotal =
+                harga * jumlah;
+
+
+            const hasilDetail =
+                await client.query(
+                    `
+                    INSERT INTO detail_pesanan
+                    (
+                        pesanan_id,
+                        nama_produk,
+                        harga,
+                        jumlah,
+                        subtotal
+                    )
+                    VALUES
+                    ($1, $2, $3, $4, $5)
+
+                    RETURNING *
+                    `,
+                    [
+                        pesananBaru.id,
+                        produk.nama,
+                        harga,
+                        jumlah,
+                        subtotal
+                    ]
+                );
+
+
+            console.log(
+                "Detail masuk:",
+                hasilDetail.rows[0]
+            );
         }
-    );
+
+
+        await client.query("COMMIT");
+
+        console.log(
+            "TRANSACTION COMMIT BERHASIL"
+        );
+
+
+        res.json({
+            pesan:
+                "Pesanan berhasil disimpan",
+
+            pesananId:
+                pesananBaru.id,
+
+            total:
+                total
+        });
+
+
+    } catch (error) {
+
+        await client.query("ROLLBACK");
+
+        console.error(
+            "CHECKOUT POSTGRESQL ERROR:"
+        );
+
+        console.error(error);
+
+
+        res.status(500).json({
+            pesan:
+                "Pesanan gagal disimpan"
+        });
+
+
+    } finally {
+
+        client.release();
+    }
 
 });
 
 app.get(
     "/pesanan",
     cekLogin,
-    function(req, res) {
+    async function(req, res) {
 
-    const sqlPesanan = `
-        SELECT *
-        FROM pesanan
-        ORDER BY id DESC
-    `;
+        try {
 
-    db.query(sqlPesanan, function(error, pesanan) {
+            const hasilPesanan =
+                await pool.query(`
+                    SELECT *
+                    FROM pesanan
+                    ORDER BY id DESC
+                `);
 
-        if (error) {
+
+            const hasilDetail =
+                await pool.query(`
+                    SELECT *
+                    FROM detail_pesanan
+                    ORDER BY id ASC
+                `);
+
+
+            const pesanan =
+                hasilPesanan.rows.map(
+                    function(item) {
+
+                        const produk =
+                            hasilDetail.rows.filter(
+                                function(detail) {
+
+                                    return (
+                                        detail.pesanan_id
+                                        ===
+                                        item.id
+                                    );
+                                }
+                            );
+
+
+                        return {
+                            ...item,
+                            produk: produk
+                        };
+                    }
+                );
+
+
+            res.json(pesanan);
+
+
+        } catch (error) {
+
             console.error(error);
 
-            return res.status(500).json({
-                pesan: "Gagal mengambil data pesanan"
+            res.status(500).json({
+                pesan:
+                    "Gagal mengambil pesanan"
             });
         }
 
-        if (pesanan.length === 0) {
-            return res.json([]);
-        }
-
-        const sqlDetail = `
-            SELECT *
-            FROM detail_pesanan
-            ORDER BY id ASC
-        `;
-
-        db.query(sqlDetail, function(error, detail) {
-
-            if (error) {
-                console.error(error);
-
-                return res.status(500).json({
-                    pesan: "Gagal mengambil detail pesanan"
-                });
-            }
-
-            const hasil = pesanan.map(function(itemPesanan) {
-
-                const produkPesanan = detail.filter(function(itemDetail) {
-
-                    return itemDetail.pesanan_id === itemPesanan.id;
-
-                });
-
-                return {
-                    ...itemPesanan,
-                    produk: produkPesanan
-                };
-            });
-
-            res.json(hasil);
-
-        });
-
-    });
-
-});
+    }
+);
 
 app.patch(
     "/pesanan/:id/status",
     cekLogin,
-    function(req, res) {
+    async function(req, res) {
 
-    const id = req.params.id;
-    const status = req.body.status;
+        try {
 
-    const statusValid = [
-        "Baru",
-        "Diproses",
-        "Selesai",
-        "Dibatalkan"
-    ];
+            const id =
+                req.params.id;
 
-    if (!statusValid.includes(status)) {
+            const status =
+                req.body.status;
 
-        return res.status(400).json({
-            pesan: "Status tidak valid"
-        });
-    }
 
-    const sql = `
-        UPDATE pesanan
-        SET status = ?
-        WHERE id = ?
-    `;
+            const statusValid = [
+                "Baru",
+                "Diproses",
+                "Selesai",
+                "Dibatalkan"
+            ];
 
-    db.query(
-        sql,
-        [status, id],
-        function(error, result) {
 
-            if (error) {
+            if (!statusValid.includes(status)) {
 
-                console.error(error);
-
-                return res.status(500).json({
-                    pesan: "Gagal mengubah status"
+                return res.status(400).json({
+                    pesan:
+                        "Status tidak valid"
                 });
             }
 
-            if (result.affectedRows === 0) {
+
+            const hasil =
+                await pool.query(
+                    `
+                    UPDATE pesanan
+
+                    SET status = $1
+
+                    WHERE id = $2
+                    `,
+                    [
+                        status,
+                        id
+                    ]
+                );
+
+
+            if (hasil.rowCount === 0) {
 
                 return res.status(404).json({
-                    pesan: "Pesanan tidak ditemukan"
+                    pesan:
+                        "Pesanan tidak ditemukan"
                 });
             }
 
+
             res.json({
-                pesan: "Status berhasil diubah"
+                pesan:
+                    "Status berhasil diubah"
+            });
+
+
+        } catch (error) {
+
+            console.error(error);
+
+            res.status(500).json({
+                pesan:
+                    "Gagal mengubah status"
             });
         }
-    );
 
-});
+    }
+);
 
 app.get("/produk", async function(req, res) {
 
@@ -522,84 +606,92 @@ app.delete(
     }
 );
 
-app.post("/login", function(req, res) {
+app.post("/login", async function(req, res) {
 
-    const {
-        username,
-        password
-    } = req.body;
+    try {
 
-    if (!username || !password) {
+        const {
+            username,
+            password
+        } = req.body;
 
-        return res.status(400).json({
-            pesan: "Username dan password wajib diisi"
+
+        if (!username || !password) {
+
+            return res.status(400).json({
+                pesan:
+                    "Username dan password wajib diisi"
+            });
+        }
+
+
+        const hasil =
+            await pool.query(
+                `
+                SELECT *
+                FROM admin
+                WHERE username = $1
+                LIMIT 1
+                `,
+                [username]
+            );
+
+
+        if (hasil.rows.length === 0) {
+
+            return res.status(401).json({
+                pesan:
+                    "Username atau password salah"
+            });
+        }
+
+
+        const admin =
+            hasil.rows[0];
+
+
+        const cocok =
+            await bcrypt.compare(
+                password,
+                admin.password
+            );
+
+
+        if (!cocok) {
+
+            return res.status(401).json({
+                pesan:
+                    "Username atau password salah"
+            });
+        }
+
+
+        req.session.admin = {
+            id: admin.id,
+            username: admin.username
+        };
+
+
+        res.json({
+            pesan: "Login berhasil"
+        });
+
+
+    } catch (error) {
+
+        console.error(
+            "LOGIN ERROR:"
+        );
+
+        console.error(error);
+
+
+        res.status(500).json({
+            pesan:
+                "Terjadi kesalahan server"
         });
     }
 
-    const sql = `
-        SELECT *
-        FROM admin
-        WHERE username = ?
-        LIMIT 1
-    `;
-
-    db.query(
-        sql,
-        [username],
-        function(error, hasil) {
-
-            if (error) {
-
-                console.error(error);
-
-                return res.status(500).json({
-                    pesan: "Terjadi kesalahan server"
-                });
-            }
-
-            if (hasil.length === 0) {
-
-                return res.status(401).json({
-                    pesan: "Username atau password salah"
-                });
-            }
-
-            const admin = hasil[0];
-
-            bcrypt.compare(
-                password,
-                admin.password,
-                function(error, cocok) {
-
-                    if (error) {
-
-                        console.error(error);
-
-                        return res.status(500).json({
-                            pesan: "Terjadi kesalahan server"
-                        });
-                    }
-
-                    if (!cocok) {
-
-                        return res.status(401).json({
-                            pesan:
-                                "Username atau password salah"
-                        });
-                    }
-
-                    req.session.admin = {
-                        id: admin.id,
-                        username: admin.username
-                    };
-
-                    res.json({
-                        pesan: "Login berhasil"
-                    });
-                }
-            );
-        }
-    );
 });
 
 function cekLogin(req, res, next) {
@@ -670,16 +762,16 @@ app.listen(PORT, function() {
     console.log("Server berjalan di http://localhost:" + PORT);
 });
 
-db.connect(function(error) {
+// db.connect(function(error) {
 
-    if (error) {
-        console.error("Database gagal terhubung:");
-        console.error(error);
-        return;
-    }
+//     if (error) {
+//         console.error("Database gagal terhubung:");
+//         console.error(error);
+//         return;
+//     }
 
-    console.log("Database MySQL berhasil terhubung!");
-});
+//     console.log("Database MySQL berhasil terhubung!");
+// });
 
 app.use(
     session({

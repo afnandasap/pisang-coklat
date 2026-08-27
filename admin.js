@@ -26,18 +26,34 @@ async function cekLoginAdmin() {
 
 async function ambilPesanan() {
 
-    let daftarPesanan =
+    const daftarPesanan =
         document.getElementById("daftar-pesanan");
 
     try {
 
-        let response =
+        const response =
             await fetch("/pesanan");
 
-        let data =
+        const data =
             await response.json();
 
+        console.log(
+            "Data pesanan:",
+            data
+        );
+
+
+        if (!response.ok) {
+
+            daftarPesanan.innerHTML =
+                "<p>Gagal mengambil pesanan.</p>";
+
+            return;
+        }
+
+
         daftarPesanan.innerHTML = "";
+
 
         if (data.length === 0) {
 
@@ -47,120 +63,184 @@ async function ambilPesanan() {
             return;
         }
 
-  data.forEach(function(pesanan) {
 
-    let card = document.createElement("div");
+        data.forEach(function(pesanan) {
 
-    card.classList.add("card-pesanan");
+            const card =
+                document.createElement("div");
 
-
-    let daftarProduk = "";
-
-    pesanan.produk.forEach(function(produk) {
-
-        daftarProduk += `
-            <div class="produk-pesanan">
-
-                <span>
-                    ${produk.nama_produk}
-                    x${produk.jumlah}
-                </span>
-
-                <span>
-                    Rp${produk.subtotal.toLocaleString("id-ID")}
-                </span>
-
-            </div>
-        `;
-    });
+            card.classList.add(
+                "card-pesanan"
+            );
 
 
-    card.innerHTML = `
-    <h3>Pesanan #${pesanan.id}</h3>
+            let daftarProduk = "";
 
-    <p>
-        <strong>Nama:</strong>
-        ${pesanan.nama}
-    </p>
 
-    <p>
-        <strong>WhatsApp:</strong>
-        ${pesanan.whatsapp}
-    </p>
+            if (
+                Array.isArray(pesanan.produk) &&
+                pesanan.produk.length > 0
+            ) {
 
-    <p>
-        <strong>Alamat:</strong>
-        ${pesanan.alamat}
-    </p>
+                pesanan.produk.forEach(
+                    function(produk) {
 
-    <p>
-        <strong>Catatan:</strong>
-        ${pesanan.catatan || "-"}
-    </p>
+                        daftarProduk += `
+                            <div class="produk-pesanan">
 
-    <div class="daftar-produk">
+                                <span>
+                                    ${produk.nama_produk}
+                                    x${produk.jumlah}
+                                </span>
 
-        <h4>Produk:</h4>
+                                <span>
+                                    Rp${Number(
+                                        produk.subtotal
+                                    ).toLocaleString("id-ID")}
+                                </span>
 
-        ${daftarProduk}
+                            </div>
+                        `;
 
-    </div>
+                    }
+                );
 
-    <div class="status-container">
+            } else {
 
-        <label>
-            <strong>Status:</strong>
-        </label>
+                daftarProduk =
+                    "<p>Tidak ada detail produk.</p>";
+            }
 
-        <select
-            onchange="ubahStatus(${pesanan.id}, this.value)"
-        >
 
-            <option
-                value="Baru"
-                ${pesanan.status === "Baru" ? "selected" : ""}
-            >
-                Baru
-            </option>
+            card.innerHTML = `
 
-            <option
-                value="Diproses"
-                ${pesanan.status === "Diproses" ? "selected" : ""}
-            >
-                Diproses
-            </option>
+                <h3>
+                    Pesanan #${pesanan.id}
+                </h3>
 
-            <option
-                value="Selesai"
-                ${pesanan.status === "Selesai" ? "selected" : ""}
-            >
-                Selesai
-            </option>
 
-            <option
-                value="Dibatalkan"
-                ${pesanan.status === "Dibatalkan" ? "selected" : ""}
-            >
-                Dibatalkan
-            </option>
+                <p>
+                    <strong>Nama:</strong>
+                    ${pesanan.nama}
+                </p>
 
-        </select>
 
-    </div>
+                <p>
+                    <strong>WhatsApp:</strong>
+                    ${pesanan.whatsapp}
+                </p>
 
-    <p class="total">
-        Total:
-        Rp${pesanan.total.toLocaleString("id-ID")}
-    </p>
-`;
 
-    daftarPesanan.appendChild(card);
+                <p>
+                    <strong>Alamat:</strong>
+                    ${pesanan.alamat}
+                </p>
 
-});
+
+                <p>
+                    <strong>Catatan:</strong>
+                    ${pesanan.catatan || "-"}
+                </p>
+
+
+                <div class="daftar-produk">
+
+                    <h4>Produk:</h4>
+
+                    ${daftarProduk}
+
+                </div>
+
+
+                <div class="status-container">
+
+                    <label>
+                        <strong>Status:</strong>
+                    </label>
+
+                    <select
+                        onchange="
+                            ubahStatus(
+                                ${pesanan.id},
+                                this.value
+                            )
+                        "
+                    >
+
+                        <option
+                            value="Baru"
+                            ${
+                                pesanan.status === "Baru"
+                                ? "selected"
+                                : ""
+                            }
+                        >
+                            Baru
+                        </option>
+
+
+                        <option
+                            value="Diproses"
+                            ${
+                                pesanan.status === "Diproses"
+                                ? "selected"
+                                : ""
+                            }
+                        >
+                            Diproses
+                        </option>
+
+
+                        <option
+                            value="Selesai"
+                            ${
+                                pesanan.status === "Selesai"
+                                ? "selected"
+                                : ""
+                            }
+                        >
+                            Selesai
+                        </option>
+
+
+                        <option
+                            value="Dibatalkan"
+                            ${
+                                pesanan.status === "Dibatalkan"
+                                ? "selected"
+                                : ""
+                            }
+                        >
+                            Dibatalkan
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <p class="total">
+
+                    Total:
+                    Rp${Number(
+                        pesanan.total
+                    ).toLocaleString("id-ID")}
+
+                </p>
+            `;
+
+
+            daftarPesanan.appendChild(card);
+
+        });
+
 
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            "ERROR AMBIL PESANAN:",
+            error
+        );
 
         daftarPesanan.innerHTML =
             "<p>Gagal mengambil data pesanan.</p>";
