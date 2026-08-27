@@ -5,6 +5,7 @@ const express = require("express");
 const cors = require("cors");
 const mysql = require("mysql2");
 const app = express();
+const pool = require("./db-postgres");
 const db = mysql.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -290,28 +291,28 @@ app.patch(
 
 });
 
-app.get("/produk", function(req, res) {
+app.get("/produk", async function(req, res) {
 
-    const sql = `
-        SELECT *
-        FROM produk
-        WHERE aktif = TRUE
-        ORDER BY id DESC
-    `;
+    try {
 
-    db.query(sql, function(error, hasil) {
+        const hasil =
+            await pool.query(`
+                SELECT *
+                FROM produk
+                WHERE aktif = TRUE
+                ORDER BY id DESC
+            `);
 
-        if (error) {
+        res.json(hasil.rows);
 
-            console.error(error);
+    } catch (error) {
 
-            return res.status(500).json({
-                pesan: "Gagal mengambil produk"
-            });
-        }
+        console.error(error);
 
-        res.json(hasil);
-    });
+        res.status(500).json({
+            pesan: "Gagal mengambil produk"
+        });
+    }
 
 });
 
@@ -319,169 +320,207 @@ app.post(
     "/produk",
     cekLogin,
     upload.single("gambar"),
-    function(req, res) {
+    async function(req, res) {
 
-        const {
-            nama,
-            deskripsi,
-            harga
-        } = req.body;
+        try {
 
-        if (!nama || !harga) {
-
-            return res.status(400).json({
-                pesan: "Nama dan harga wajib diisi"
-            });
-        }
-
-        if (!req.file) {
-
-            return res.status(400).json({
-                pesan: "Foto produk wajib dipilih"
-            });
-        }
-
-        const gambar = req.file.filename;
-
-        const sql = `
-            INSERT INTO produk
-            (nama, deskripsi, harga, gambar)
-            VALUES (?, ?, ?, ?)
-        `;
-
-        db.query(
-            sql,
-            [
+            const {
                 nama,
                 deskripsi,
-                Number(harga),
-                gambar
-            ],
-            function(error, result) {
+                harga
+            } = req.body;
 
-                if (error) {
+            if (!nama || !harga) {
 
-                    console.error(error);
-
-                    return res.status(500).json({
-                        pesan:
-                            "Gagal menambahkan produk"
-                    });
-                }
-
-                res.json({
+                return res.status(400).json({
                     pesan:
-                        "Produk berhasil ditambahkan",
-
-                    id: result.insertId
+                        "Nama dan harga wajib diisi"
                 });
             }
-        );
+
+            if (!req.file) {
+
+                return res.status(400).json({
+                    pesan:
+                        "Foto produk wajib dipilih"
+                });
+            }
+
+            const gambar =
+                req.file.filename;
+
+
+            const sql = `
+                INSERT INTO produk
+                (
+                    nama,
+                    deskripsi,
+                    harga,
+                    gambar
+                )
+                VALUES
+                ($1, $2, $3, $4)
+                RETURNING id
+            `;
+
+
+            const hasil =
+                await pool.query(
+                    sql,
+                    [
+                        nama,
+                        deskripsi,
+                        Number(harga),
+                        gambar
+                    ]
+                );
+
+
+            res.json({
+                pesan:
+                    "Produk berhasil ditambahkan",
+
+                id:
+                    hasil.rows[0].id
+            });
+
+
+        } catch (error) {
+
+            console.error(error);
+
+            res.status(500).json({
+                pesan:
+                    "Gagal menambahkan produk"
+            });
+        }
     }
 );
 
 app.patch(
     "/produk/:id",
     cekLogin,
-    function(req, res) {
+    async function(req, res) {
 
-    const id = req.params.id;
+        try {
 
-    const {
-        nama,
-        deskripsi,
-        harga
-    } = req.body;
+            const id =
+                req.params.id;
 
-    if (!nama || !harga) {
+            const {
+                nama,
+                deskripsi,
+                harga
+            } = req.body;
 
-        return res.status(400).json({
-            pesan: "Nama dan harga wajib diisi"
-        });
-    }
 
-    const sql = `
-        UPDATE produk
-        SET nama = ?,
-            deskripsi = ?,
-            harga = ?
-        WHERE id = ?
-    `;
+            if (!nama || !harga) {
 
-    db.query(
-        sql,
-        [
-            nama,
-            deskripsi,
-            harga,
-            id
-        ],
-        function(error, result) {
-
-            if (error) {
-
-                console.error(error);
-
-                return res.status(500).json({
-                    pesan: "Gagal mengubah produk"
+                return res.status(400).json({
+                    pesan:
+                        "Nama dan harga wajib diisi"
                 });
             }
 
-            if (result.affectedRows === 0) {
+
+            const hasil =
+                await pool.query(
+                    `
+                    UPDATE produk
+
+                    SET
+                        nama = $1,
+                        deskripsi = $2,
+                        harga = $3
+
+                    WHERE id = $4
+                    `,
+
+                    [
+                        nama,
+                        deskripsi,
+                        Number(harga),
+                        id
+                    ]
+                );
+
+
+            if (hasil.rowCount === 0) {
 
                 return res.status(404).json({
-                    pesan: "Produk tidak ditemukan"
+                    pesan:
+                        "Produk tidak ditemukan"
                 });
             }
 
+
             res.json({
-                pesan: "Produk berhasil diubah"
+                pesan:
+                    "Produk berhasil diubah"
+            });
+
+
+        } catch (error) {
+
+            console.error(error);
+
+            res.status(500).json({
+                pesan:
+                    "Gagal mengubah produk"
             });
         }
-    );
 
-});
+    }
+);
 
 app.delete(
     "/produk/:id",
     cekLogin,
-    function(req, res) {
+    async function(req, res) {
 
-    const id = req.params.id;
+        try {
 
-    const sql = `
-        DELETE FROM produk
-        WHERE id = ?
-    `;
+            const id =
+                req.params.id;
 
-    db.query(
-        sql,
-        [id],
-        function(error, result) {
 
-            if (error) {
+            const hasil =
+                await pool.query(
+                    `
+                    DELETE FROM produk
+                    WHERE id = $1
+                    `,
+                    [id]
+                );
 
-                console.error(error);
 
-                return res.status(500).json({
-                    pesan: "Gagal menghapus produk"
-                });
-            }
-
-            if (result.affectedRows === 0) {
+            if (hasil.rowCount === 0) {
 
                 return res.status(404).json({
-                    pesan: "Produk tidak ditemukan"
+                    pesan:
+                        "Produk tidak ditemukan"
                 });
             }
 
+
             res.json({
-                pesan: "Produk berhasil dihapus"
+                pesan:
+                    "Produk berhasil dihapus"
+            });
+
+
+        } catch (error) {
+
+            console.error(error);
+
+            res.status(500).json({
+                pesan:
+                    "Gagal menghapus produk"
             });
         }
-    );
 
-});
+    }
+);
 
 app.post("/login", function(req, res) {
 
@@ -608,6 +647,24 @@ app.post("/logout", function(req, res) {
         });
     });
 });
+
+pool.query("SELECT NOW()")
+    .then(function(result) {
+
+        console.log(
+            "PostgreSQL berhasil terhubung!"
+        );
+
+    })
+    .catch(function(error) {
+
+        console.error(
+            "PostgreSQL gagal terhubung:"
+        );
+
+        console.error(error.message);
+
+    });
 
 app.listen(PORT, function() {
     console.log("Server berjalan di http://localhost:" + PORT);
