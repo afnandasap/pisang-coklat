@@ -1,3 +1,4 @@
+require("dotenv").config();
 const bcrypt = require("bcrypt");
 const session = require("express-session");
 const express = require("express");
@@ -5,10 +6,10 @@ const cors = require("cors");
 const mysql = require("mysql2");
 const app = express();
 const db = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "123456",
-    database: "pisang_coklat"
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
 });
 const multer = require("multer");
 const path = require("path");
@@ -37,6 +38,7 @@ const upload = multer({
 
 
 const PORT = 3000;
+
 
 app.use(express.json());
 app.use(cors());
@@ -624,7 +626,7 @@ db.connect(function(error) {
 
 app.use(
     session({
-        secret: "pisang-coklat-rahasia",
+    secret: process.env.SESSION_SECRET,
         resave: false,
         saveUninitialized: false,
 
