@@ -2,15 +2,12 @@ require("dotenv").config();
 
 const { Pool } = require("pg");
 
-console.log(
-    "DATABASE_URL tersedia:",
-    !!process.env.DATABASE_URL
-);
+console.log("DATABASE_URL ada:", !!process.env.DATABASE_URL);
+console.log("PGHOST:", process.env.PGHOST || "KOSONG");
+console.log("PGPORT:", process.env.PGPORT || "KOSONG");
 
 if (!process.env.DATABASE_URL) {
-    throw new Error(
-        "DATABASE_URL belum tersedia di environment"
-    );
+    throw new Error("DATABASE_URL tidak tersedia");
 }
 
 const pool = new Pool({
