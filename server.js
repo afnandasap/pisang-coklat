@@ -1,11 +1,45 @@
 require("dotenv").config();
-const bcrypt = require("bcrypt");
-const session = require("express-session");
+
 const express = require("express");
+const session = require("express-session");
+const { RedisStore } = require("connect-redis");
+
+const redisClient = require("./redis-client");
+const bcrypt = require("bcrypt");
+
+const redisStore =
+    new RedisStore({
+        client: redisClient,
+        prefix: "pisang:"
+    });
+
+    app.set("trust proxy", 1);
+
+app.use(
+    session({
+        store: redisStore,
+
+        secret: process.env.SESSION_SECRET,
+
+        resave: false,
+        saveUninitialized: false,
+
+        cookie: {
+            maxAge: 1000 * 60 * 60,
+            httpOnly: true,
+            sameSite: "lax",
+
+            secure:
+                process.env.NODE_ENV === "production"
+        }
+    })
+);
+
 const cors = require("cors");
 //const mysql = require("mysql2");
 const app = express();
 const pool = require("./db-postgres");
+
 // const db = mysql.createConnection({
 //     host: process.env.DB_HOST,
 //     user: process.env.DB_USER,
@@ -38,33 +72,64 @@ const upload = multer({
 });
 
 
-const PORT = 3000;
+const PORT =
+    process.env.PORT || 3000;
 
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cors());
-app.use(express.static(__dirname));
-app.use(cors());
-app.use(express.json());
-app.use(express.static(__dirname));
-app.use(cors());
-app.use(express.json());
 app.use(express.static(__dirname));
 
 app.get("/", function(req, res) {
     res.send("Server Pisang Coklat berjalan!");
 });
 
+app.set("trust proxy", 1);
+
 app.use(
     session({
-        secret: "pisang-coklat-secret",
+        store: redisStore,
+
+        secret: process.env.SESSION_SECRET,
+
         resave: false,
         saveUninitialized: false,
+
         cookie: {
-            secure: false
+            maxAge: 1000 * 60 * 60,
+            httpOnly: true,
+            sameSite: "lax",
+
+            secure:
+                process.env.NODE_ENV === "production"
         }
     })
 );
+
+app.get("/health", async function(req, res) {
+
+    try {
+
+        await pool.query("SELECT 1");
+        await redisClient.ping();
+
+        res.status(200).json({
+            status: "ok"
+        });
+
+    } catch (error) {
+
+        console.error(
+            "HEALTH CHECK ERROR:",
+            error
+        );
+
+        res.status(503).json({
+            status: "error"
+        });
+    }
+});
 
 app.post("/pesanan", async function(req, res) {
 
@@ -666,15 +731,25 @@ app.post("/login", async function(req, res) {
         }
 
 
-        req.session.admin = {
-            id: admin.id,
-            username: admin.username
-        };
+       req.session.admin = {
+    id: admin.id,
+    username: admin.username
+};
 
+req.session.save(function(err) {
 
-        res.json({
-            pesan: "Login berhasil"
+    if (err) {
+        console.error("Gagal menyimpan session:", err);
+
+        return res.status(500).json({
+            pesan: "Gagal menyimpan session"
         });
+    }
+
+    res.json({
+        pesan: "Login berhasil"
+    });
+});
 
 
     } catch (error) {
@@ -758,9 +833,131 @@ pool.query("SELECT NOW()")
 
     });
 
-app.listen(PORT, function() {
-    console.log("Server berjalan di http://localhost:" + PORT);
+    app.get("/health", async function(req, res) {
+
+    try {
+
+        await pool.query("SELECT 1");
+
+        await redisClient.ping();
+
+        res.json({
+            status: "ok",
+            postgres: "connected",
+            redis: "connected"
+        });
+
+    } catch (error) {
+
+        console.error("HEALTH CHECK ERROR:");
+        console.error(error);
+
+        res.status(500).json({
+            status: "error"
+        });
+    }
+
 });
+
+async function seedAdmin() {
+
+    const username =
+        process.env.ADMIN_USERNAME;
+
+    const password =
+        process.env.ADMIN_PASSWORD;
+
+    if (!username || !password) {
+        console.log(
+            "Admin seed dilewati."
+        );
+
+        return;
+    }
+
+    const cek =
+        await pool.query(
+            `
+            SELECT id
+            FROM admin
+            WHERE username = $1
+            `,
+            [username]
+        );
+
+    if (cek.rows.length > 0) {
+
+        console.log(
+            "Admin sudah ada."
+        );
+
+        return;
+    }
+
+    const hash =
+        await bcrypt.hash(
+            password,
+            10
+        );
+
+    await pool.query(
+        `
+        INSERT INTO admin
+        (username, password)
+        VALUES ($1, $2)
+        `,
+        [
+            username,
+            hash
+        ]
+    );
+
+    console.log(
+        "Admin pertama berhasil dibuat."
+    );
+}
+
+async function startServer() {
+
+    try {
+
+        //await redisClient.connect();
+
+        // console.log(
+        //     "Redis berhasil terhubung!"
+        // );
+
+        await seedAdmin();
+
+
+        app.listen(
+            PORT,
+            function() {
+
+                console.log(
+                    `Server berjalan di http://localhost:${PORT}`
+                );
+
+            }
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Gagal menjalankan server:"
+        );
+
+        console.error(
+            error
+        );
+
+        process.exit(1);
+    }
+}
+
+
+startServer();
 
 // db.connect(function(error) {
 
@@ -772,15 +969,3 @@ app.listen(PORT, function() {
 
 //     console.log("Database MySQL berhasil terhubung!");
 // });
-
-app.use(
-    session({
-    secret: process.env.SESSION_SECRET,
-        resave: false,
-        saveUninitialized: false,
-
-        cookie: {
-            maxAge: 1000 * 60 * 60
-        }
-    })
-);
