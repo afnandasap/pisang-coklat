@@ -7,6 +7,8 @@ const { RedisStore } = require("connect-redis");
 const redisClient = require("./redis-client");
 const bcrypt = require("bcrypt");
 
+const app = express();
+
 const redisStore =
     new RedisStore({
         client: redisClient,
@@ -37,7 +39,6 @@ app.use(
 
 const cors = require("cors");
 //const mysql = require("mysql2");
-const app = express();
 const pool = require("./db-postgres");
 
 // const db = mysql.createConnection({
