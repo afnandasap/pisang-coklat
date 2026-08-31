@@ -12,3 +12,9 @@ if (!process.env.DATABASE_URL) {
         "DATABASE_URL belum tersedia di environment"
     );
 }
+
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL
+});
+
+module.exports = pool;
