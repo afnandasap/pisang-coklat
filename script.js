@@ -133,6 +133,87 @@ function checkout() {
     });
 }
 
+async function kirimPesanan(event) {
+
+    event.preventDefault();
+
+    const nama =
+        document.getElementById("nama").value.trim();
+
+    const whatsapp =
+        document.getElementById("whatsapp").value.trim();
+
+    const alamat =
+        document.getElementById("alamat").value.trim();
+
+    const catatan =
+        document.getElementById("catatan").value.trim();
+
+    if (!nama || !whatsapp || !alamat) {
+        alert("Nama, WhatsApp, dan alamat wajib diisi.");
+        return;
+    }
+
+    if (!Array.isArray(keranjang) || keranjang.length === 0) {
+        alert("Keranjang masih kosong.");
+        return;
+    }
+
+    try {
+
+        const response = await fetch("/pesanan", {
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                nama,
+                whatsapp,
+                alamat,
+                catatan,
+                keranjang
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            alert(
+                data.pesan ||
+                "Pesanan gagal disimpan."
+            );
+            return;
+        }
+
+        alert(
+            "Pesanan berhasil disimpan!"
+        );
+
+        keranjang = [];
+
+        localStorage.removeItem("keranjang");
+
+        tampilkanKeranjang();
+
+        document.getElementById(
+            "checkout-form"
+        ).reset();
+
+    } catch (error) {
+
+        console.error(
+            "Checkout error:",
+            error
+        );
+
+        alert(
+            "Gagal mengirim pesanan."
+        );
+    }
+}
+
 let formPesanan = document.getElementById("form-pesanan");
 
 formPesanan.addEventListener("submit", async function(event) {
