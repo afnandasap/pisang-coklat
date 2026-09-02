@@ -198,7 +198,7 @@ async function kirimPesanan(event) {
         tampilkanKeranjang();
 
         document.getElementById(
-            "checkout-form"
+            "form-pesanan"
         ).reset();
 
     } catch (error) {
@@ -214,50 +214,6 @@ async function kirimPesanan(event) {
     }
 }
 
-let formPesanan = document.getElementById("form-pesanan");
-
-formPesanan.addEventListener("submit", async function(event) {
-
-    event.preventDefault();
-
-    let nama = document.getElementById("nama").value;
-    let whatsapp = document.getElementById("whatsapp").value;
-    let alamat = document.getElementById("alamat").value;
-    let catatan = document.getElementById("catatan").value;
-
-    let dataPesanan = {
-        nama: nama,
-        whatsapp: whatsapp,
-        alamat: alamat,
-        catatan: catatan,
-        keranjang: keranjang
-    };
-
-    try {
-
-        let response = await fetch("http://localhost:3000/pesanan", {
-            method: "POST",
-
-            headers: {
-                "Content-Type": "application/json"
-            },
-
-            body: JSON.stringify(dataPesanan)
-        });
-
-        let hasil = await response.json();
-
-        console.log(hasil);
-
-        alert("Pesanan berhasil dikirim ke server!");
-
-    } catch (error) {
-
-        console.error(error);
-
-        alert("Gagal mengirim pesanan.");
-    }
-});
 
 async function ambilProduk() {
 
