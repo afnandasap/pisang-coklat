@@ -28,4 +28,13 @@ const pool = new Pool({
     connectionTimeoutMillis: 10000
 });
 
+pool.connect()
+  .then(client => {
+    console.log("TEST POSTGRES: koneksi berhasil");
+    client.release();
+  })
+  .catch(err => {
+    console.error("TEST POSTGRES ERROR:", err.message);
+  });
+
 module.exports = pool;
