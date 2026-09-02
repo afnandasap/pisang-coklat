@@ -862,44 +862,46 @@ pool.query("SELECT NOW()")
 
 async function seedAdmin() {
 
-    const username =
-        process.env.ADMIN_USERNAME;
-
-    const password =
-        process.env.ADMIN_PASSWORD;
+    const username = process.env.ADMIN_USERNAME;
+    const password = process.env.ADMIN_PASSWORD;
 
     if (!username || !password) {
-        console.log(
-            "Admin seed dilewati."
-        );
-
+        console.log("Admin seed dilewati.");
         return;
     }
 
-    const cek =
-        await pool.query(
-            `
-            SELECT id
-            FROM admin
-            WHERE username = $1
-            `,
-            [username]
-        );
+    const cek = await pool.query(
+        `
+        SELECT id
+        FROM admin
+        WHERE username = $1
+        LIMIT 1
+        `,
+        [username]
+    );
+
+    const hash = await bcrypt.hash(password, 10);
 
     if (cek.rows.length > 0) {
 
+        await pool.query(
+            `
+            UPDATE admin
+            SET password = $1
+            WHERE username = $2
+            `,
+            [
+                hash,
+                username
+            ]
+        );
+
         console.log(
-            "Admin sudah ada."
+            "Password admin berhasil disinkronkan."
         );
 
         return;
     }
-
-    const hash =
-        await bcrypt.hash(
-            password,
-            10
-        );
 
     await pool.query(
         `
