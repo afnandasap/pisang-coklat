@@ -7,6 +7,33 @@ const { RedisStore } = require("connect-redis");
 const redisClient = require("./redis-client");
 const bcrypt = require("bcrypt");
 
+const fs = require("fs");
+const path = require("path");
+const multer = require("multer");
+
+const uploadDir = path.join(__dirname, "uploads");
+
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+    destination: function(req, file, cb) {
+        cb(null, uploadDir);
+    },
+
+    filename: function(req, file, cb) {
+        cb(
+            null,
+            Date.now() + "-" + file.originalname
+        );
+    }
+});
+
+const upload = multer({
+    storage: storage
+});
+
 const app = express();
 
 const redisStore =
@@ -40,38 +67,6 @@ app.use(
 const cors = require("cors");
 //const mysql = require("mysql2");
 const pool = require("./db-postgres");
-
-// const db = mysql.createConnection({
-//     host: process.env.DB_HOST,
-//     user: process.env.DB_USER,
-//     password: process.env.DB_PASSWORD,
-//     database: process.env.DB_NAME
-// });
-const multer = require("multer");
-const path = require("path");
-
-const storage = multer.diskStorage({
-
-    destination: function(req, file, cb) {
-        cb(null, "uploads/");
-    },
-
-    filename: function(req, file, cb) {
-
-        const namaFile =
-            Date.now() +
-            "-" +
-            file.originalname;
-
-        cb(null, namaFile);
-    }
-
-});
-
-const upload = multer({
-    storage: storage
-});
-
 
 const PORT =
     process.env.PORT || 3000;
