@@ -56,6 +56,8 @@ services:
       PG_PASSWORD: ${POSTGRES_PASSWORD}
       PG_DATABASE: ${POSTGRES_DB}
 
+      DATABASE_URL: ${DATABASE_URL}
+
       REDIS_URL: redis://redis:6379
 
       SESSION_SECRET: ${SESSION_SECRET}
