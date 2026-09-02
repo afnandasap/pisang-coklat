@@ -919,40 +919,19 @@ async function seedAdmin() {
 }
 
 async function startServer() {
-
     try {
-
-        //await redisClient.connect();
-
-        // console.log(
-        //     "Redis berhasil terhubung!"
-        // );
+        console.log("Menunggu private network Railway...");
+        await new Promise(resolve => setTimeout(resolve, 3000));
 
         await seedAdmin();
 
+        app.listen(PORT, "0.0.0.0", () => {
+            console.log(`Server berjalan di port ${PORT}`);
+        });
 
-        app.listen(
-            PORT,
-            function() {
-
-                console.log(
-                    `Server berjalan di http://localhost:${PORT}`
-                );
-
-            }
-        );
-
-
-    } catch (error) {
-
-        console.error(
-            "Gagal menjalankan server:"
-        );
-
-        console.error(
-            error
-        );
-
+    } catch (err) {
+        console.error("Gagal menjalankan server:");
+        console.error(err);
         process.exit(1);
     }
 }
